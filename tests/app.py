@@ -162,6 +162,12 @@ class TestTaskQueueOnThread(TaskQueueBase, unittest.TestCase):
         self.assertEqual(len(task.result), 3)
         self.assertEqual(task.result[0], backend.node_name)
 
+    def test_no_callback(self):
+        backend = self.tq.backend
+        task = yield from backend.queue_task('asynchronous', callback=False)
+        self.assertTrue(task.id)
+        self.assertEqual(task.status_string, 'QUEUED')
+
 
 class d:
     #    RPC TESTS
@@ -395,3 +401,9 @@ class TestTaskQueueOnProcess(TestTaskQueueOnThread):
         self.assertEqual(task.status_string, 'SUCCESS')
         # If the task is asyncio it drops out of the greenlet
         self.assertEqual(task.result, False)
+
+    def test_big_log(self):
+        # If this test fails, this is because the test runner will timeout on
+        # this future, this is because the pipe fills up and blocks the
+        # cpu bound task
+        yield from self.tq.queue_task('cpuboundbiglog')
